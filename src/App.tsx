@@ -4,7 +4,7 @@ import Navbar from "./components/Navbar";
 import LandingPage from "./pages/LandingPage";
 
 import { BrowserRouter as Router, Switch, Route  } from "react-router-dom";
-import RoutesPage from "./pages/RoutesPage";
+import RoutesList from "./components/RoutesList";
 
 
 function App(){
@@ -18,7 +18,7 @@ function App(){
 
             <Switch>
                 <Route path="/" exact component={LandingPage}/>
-                <Route path="/routes" component={RoutesPage}/>
+                <Route path="/stopInfo" component={RoutesList}/>
             </Switch>
 
             <div className="mt-10">
