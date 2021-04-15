@@ -8,9 +8,7 @@ import { NextBusInfo, Trips } from "../interfaces/NextBusInfo";
 {
   /* 
   Dear future me, please forgive me for wriring this piece of messy code.
-  I'm just trying to learn React with TypeScript, and I must admit I was wrong about React.
-  It is awesome, and I'm starting to like it more and more from day to day. 
-  Also I feel that I'm getting better at it.
+  I'm just trying to learn React with TypeScript.
   Hope, you are doing great these days :)
 */
 }
