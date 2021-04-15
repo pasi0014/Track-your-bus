@@ -1,7 +1,8 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
-import { RouteList } from "../interfaces/RouteList";
+import { Route, RouteList, Routes } from "../interfaces/RouteList";
 import axios from "axios";
+import { NextBusInfo } from "../interfaces/NextBusInfo";
 
 // eslint-disable-next-line no-lone-blocks
 {
@@ -17,12 +18,14 @@ import axios from "axios";
 interface MyState {
   items: any;
   stop: string;
+  route: string;
   error: boolean;
   search: string;
   isLoading: boolean;
   loadRoutes: boolean;
   errorMessage: boolean;
   errors: Errors;
+  nextArrivalInfo?: NextBusInfo;
 }
 
 interface Errors {
@@ -36,18 +39,21 @@ class RoutesList extends React.Component<RouteList, MyState> {
     this.state = {
       items: {},
       stop: "",
+      route: "",
       error: false,
       search: "",
       isLoading: true,
       loadRoutes: false,
       errorMessage: false,
       errors: {},
+      nextArrivalInfo: undefined,
     };
     this.handleChangeEvent = this.handleChangeEvent.bind(this);
     this.handleClickEvent = this.handleClickEvent.bind(this);
     this.handleRouteClickEvent = this.handleRouteClickEvent.bind(this);
 
     this.FetchStopData = this.FetchStopData.bind(this);
+    this.FetchNextArrivalData = this.FetchNextArrivalData.bind(this);
   }
 
   componentDidMount() {
@@ -115,11 +121,21 @@ class RoutesList extends React.Component<RouteList, MyState> {
     }
   }
 
+  async FetchNextArrivalData(stop: any, route: any) {
+    let apiObjectInfo = this.initializeApiObject();
+    const result = await axios({
+      method: "get",
+      baseURL: apiObjectInfo.baseNextBusURL,
+      url: `?appID=${apiObjectInfo.apiID}&apiKey=${apiObjectInfo.apiKey}&stopNo=${this.state.stop}&routeNo=${this.state.route}&format=json`,
+    });
+  }
+
   async handleClickEvent(e: any) {
     e.preventDefault();
     await this.setState({ stop: this.state.search });
     this.FetchStopData();
     if (await this.handleValidation()) console.log("Not valid");
+    console.log(this.state.errorMessage);
   }
 
   handleChangeEvent(e: any) {
@@ -127,17 +143,16 @@ class RoutesList extends React.Component<RouteList, MyState> {
     this.setState({ search: e.target.value });
   }
 
-  handleRouteClickEvent(e: any) {
+  async handleRouteClickEvent(e: any) {
     e.preventDefault();
     console.log("Click");
   }
 
   async handleValidation() {
     let searchField = this.state.search;
-
     if (typeof searchField !== undefined) {
       if (!searchField.match("^[0-9]{4}$")) {
-       await this.setState({ errorMessage: true });
+        await this.setState({ errorMessage: true });
       }
     }
     return this.state.errorMessage;
@@ -160,8 +175,28 @@ class RoutesList extends React.Component<RouteList, MyState> {
         <h2 className="font-bold text-center p-3 uppercase">
           Stop Name: {items.GetRouteSummaryForStopResult.StopDescription}
         </h2>
+        {this.rendeListOfRoutes(items.GetRouteSummaryForStopResult.Routes)}
+      </>
+    );
+  }
+
+  rendeListOfRoutes(routes: Routes) {
+    let renderArrayRoutes: boolean = false;
+    let renderObjectRoute: boolean = false;
+    const routeObject: any = routes.Route;
+
+    if (routes.Route != null && routes.Route instanceof Array) {
+      renderArrayRoutes = true;
+      renderObjectRoute = false;
+    }
+    if (!Array.isArray(routes.Route)) {
+      renderArrayRoutes = false;
+      renderObjectRoute = true;
+    }
+    if (renderArrayRoutes) {
+      return (
         <ul className="font-medium text-gray-500 text-center divide-y-2">
-          {items.GetRouteSummaryForStopResult.Routes.Route.map((item) => (
+          {routes.Route.map((item) => (
             <li
               key={item.RouteNo}
               className="hover:text-gray-900 p-5 hover:bg-green-100 cursor-pointer"
@@ -171,9 +206,24 @@ class RoutesList extends React.Component<RouteList, MyState> {
             </li>
           ))}
         </ul>
-      </>
-    );
+      );
+    }
+
+    if (renderObjectRoute) {
+      return (
+        <ul className="font-medium text-gray-500 text-center divide-y-2">
+          <li
+            className="hover:text-gray-900 p-5 hover:bg-green-100 cursor-pointer"
+            onClick={this.handleRouteClickEvent}
+          >
+            Route - {routeObject.RouteNo + " " + routeObject.RouteHeading}
+          </li>
+        </ul>
+      );
+    }
   }
+
+  displayNextBusArrivalInfo() {}
 
   displayInvalidInputMessage() {
     return (
