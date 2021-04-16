@@ -2,7 +2,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
 import { Route, RouteList, Routes } from "../interfaces/RouteList";
 import axios from "axios";
-import { NextBusInfo, Trips } from "../interfaces/NextBusInfo";
+import { NextBusInfo, RouteDirection, Trips } from "../interfaces/NextBusInfo";
+import Search from "./Search";
 
 // eslint-disable-next-line no-lone-blocks
 {
@@ -18,9 +19,8 @@ import { NextBusInfo, Trips } from "../interfaces/NextBusInfo";
  * 1. Finish FetchNextArrivalData Function
  * 2. Implement Next Bus Arrival schedule for selected bus
  * 3. Improve UI
- * 4. Refactor code and separate all of logic into separate file
+ * 4. Refactor code and separate all of the logic into separate file
  */
-
 
 interface MyState {
   items: any;
@@ -33,7 +33,7 @@ interface MyState {
   errorMessage: boolean;
   errors: Errors;
   gettingNextArrivalInfo: boolean;
-  nextArrivalInfo?: NextBusInfo;
+  nextArrivalInfo: any;
 }
 
 interface Errors {
@@ -55,11 +55,12 @@ class RoutesList extends React.Component<RouteList, MyState> {
       errorMessage: false,
       errors: {},
       gettingNextArrivalInfo: false,
-      nextArrivalInfo: undefined,
+      nextArrivalInfo: {},
     };
     this.handleChangeEvent = this.handleChangeEvent.bind(this);
     this.handleClickEvent = this.handleClickEvent.bind(this);
     this.handleRouteClickEvent = this.handleRouteClickEvent.bind(this);
+    this.handleKeyPressEvent = this.handleKeyPressEvent.bind(this);
 
     this.FetchStopData = this.FetchStopData.bind(this);
     this.FetchNextArrivalData = this.FetchNextArrivalData.bind(this);
@@ -166,12 +167,19 @@ class RoutesList extends React.Component<RouteList, MyState> {
     await this.setState({ stop: this.state.search });
     this.FetchStopData();
     if (await this.handleValidation()) console.log("Not valid");
-    console.log(this.state.errorMessage);
   }
 
   handleChangeEvent(e: any) {
     e.preventDefault();
     this.setState({ search: e.target.value });
+  }
+
+  async handleKeyPressEvent(e: React.KeyboardEvent) {
+    if (e.key === "Enter") {
+      await this.setState({ stop: this.state.search });
+      this.FetchStopData();
+      if (await this.handleValidation()) console.log("Not valid");
+    }
   }
 
   async handleRouteClickEvent(e: any) {
@@ -204,17 +212,23 @@ class RoutesList extends React.Component<RouteList, MyState> {
    */
   displayRoutesforStop(
     items: RouteList,
+    nextTrip: NextBusInfo,
     loadRoutes: boolean,
     errorMessage: boolean
   ) {
     if (errorMessage) return this.displayInvalidInputMessage();
     if (!loadRoutes) return this.displayMessage();
+    let nextTripsArray =
+      nextTrip.GetNextTripsForStopResult.Route.RouteDirection;
     return (
       <>
         <h2 className="font-bold text-center p-3 uppercase">
           Stop Name: {items.GetRouteSummaryForStopResult.StopDescription}
         </h2>
-        {this.rendeListOfRoutes(items.GetRouteSummaryForStopResult.Routes)}
+        {this.rendeListOfRoutes(
+          items.GetRouteSummaryForStopResult.Routes,
+          nextTripsArray
+        )}
       </>
     );
   }
@@ -224,36 +238,42 @@ class RoutesList extends React.Component<RouteList, MyState> {
    * @param routes
    * @returns
    */
-  rendeListOfRoutes(routes: Routes) {
-    let renderArrayRoutes: boolean = false;
-    let renderObjectRoute: boolean = false;
+  rendeListOfRoutes(routes: Routes, RouteDirection: RouteDirection) {
     const routeObject: any = routes.Route;
 
     if (routes.Route != null && routes.Route instanceof Array) {
-      renderArrayRoutes = true;
-      renderObjectRoute = false;
-    }
-    if (!Array.isArray(routes.Route)) {
-      renderArrayRoutes = false;
-      renderObjectRoute = true;
-    }
-    if (renderArrayRoutes) {
       return (
         <ul className="font-medium text-gray-500 text-center divide-y-2">
           {routes.Route.map((item) => (
             <li
-              key={item.RouteNo}
-              className="hover:text-gray-900 p-5 hover:bg-green-100 cursor-pointer"
+              key={"#" + item.RouteNo + " - " + item.RouteHeading}
+              className="hover:text-gray-900 p-5 hover:bg-green-100 cursor-pointer flex flex-col"
               onClick={this.handleRouteClickEvent}
             >
               Route - {item.RouteNo + " " + item.RouteHeading}
+              <span className="text-green-700 mr-2">Next Arrival in:</span>
+              
+              {!Array.isArray(RouteDirection) &&
+              RouteDirection.Trips !== undefined &&
+              item.RouteNo === RouteDirection.RouteNo
+                ? RouteDirection.Trips.Trip.map((item) => (
+                    <>{item.AdjustedScheduleTime}min, &nbsp;</>
+                  ))
+                : "No data :("}
+
+              {RouteDirection instanceof Array && RouteDirection !== undefined 
+                ? console.log(
+                    "Hello I'm array of trips arrays",
+                    RouteDirection.map((item) => item.Trips)
+                  )
+                : ""}
             </li>
           ))}
         </ul>
       );
     }
 
-    if (renderObjectRoute) {
+    if (!Array.isArray(routes.Route)) {
       return (
         <ul className="font-medium text-gray-500 text-center divide-y-2">
           <li
@@ -320,7 +340,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
       );
     } else {
       return (
-        <div className="container mx-auto border w-1/2 border-green-700 p-2 rounded-lg shadow-md">
+        <div className="container mx-auto border w-1/2 border-green-700 p-2 rounded-lg shadow-md mt-7">
           <div className="flex justify-center flex-col">
             <h1 className="font-bold text-gray-500 p-2">Enter stop Number</h1>
             <div className="relative mt-1">
@@ -331,6 +351,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
           focus:border-blue-500 transition-colors"
                 value={this.state.search}
                 onChange={this.handleChangeEvent}
+                onKeyPress={this.handleKeyPressEvent}
                 placeholder="Search..."
               />
               <button
@@ -345,6 +366,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
 
             {this.displayRoutesforStop(
               this.state.items,
+              this.state.nextArrivalInfo,
               this.state.loadRoutes,
               this.state.errorMessage
             )}
