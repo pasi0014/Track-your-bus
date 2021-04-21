@@ -6,6 +6,9 @@ import SearchInput from "./BusSearch/SearchInput";
 import { EmptyMessage } from "./Messages/EmptyMessage";
 import { InvalidInputMessage } from "./Messages/InvalidInputMessage";
 import { Loading } from "./Alerts/Loading";
+import { SearchContainer } from "./BusSearch/SearchContainer";
+import * as api from "../API/API";
+import { NoBusInfo } from "./Alerts/NoBusInfo";
 
 // eslint-disable-next-line no-lone-blocks
 {
@@ -18,8 +21,8 @@ import { Loading } from "./Alerts/Loading";
 
 /**
  * TODO:
- * 1. Finish FetchNextArrivalData Function
- * 2. Implement Next Bus Arrival schedule for selected bus
+ * 1. Finish FetchNextArrivalData Function - done
+ * 2. Implement Next Bus Arrival schedule for selected bus - done
  * 3. Improve UI
  * 4. Refactor code and separate all of the logic into separate file
  */
@@ -61,7 +64,6 @@ class RoutesList extends React.Component<RouteList, MyState> {
     };
     this.handleChangeEvent = this.handleChangeEvent.bind(this);
     this.handleClickEvent = this.handleClickEvent.bind(this);
-    this.handleRouteClickEvent = this.handleRouteClickEvent.bind(this);
     this.handleKeyPressEvent = this.handleKeyPressEvent.bind(this);
 
     this.FetchStopData = this.FetchStopData.bind(this);
@@ -69,30 +71,8 @@ class RoutesList extends React.Component<RouteList, MyState> {
   }
 
   componentDidMount() {
-    const array = this.initializeApiObject();
-    console.log(array);
+    // console.log(api.API.getAPI());
     this.setState({ isLoading: false });
-  }
-
-  /**
-   * Initializes api object
-   * @returns
-   */
-  initializeApiObject() {
-    const apiID = process.env.REACT_APP_API_APP_ID;
-    const apiKey = process.env.REACT_APP_API_KEY;
-    const proxy = process.env.REACT_APP_PROXY_LINK;
-
-    const baseAPIUrl = `${proxy}https://api.octranspo1.com/v2.0/GetRouteSummaryForStop`;
-    const baseNextBusURL = `${proxy}https://api.octranspo1.com/v2.0/GetNextTripsForStop`;
-
-    const apiObject = {
-      apiID: apiID,
-      apiKey: apiKey,
-      baseAPIUrl: baseAPIUrl,
-      baseNextBusURL: baseNextBusURL,
-    };
-    return apiObject;
   }
 
   /**
@@ -100,20 +80,19 @@ class RoutesList extends React.Component<RouteList, MyState> {
    */
   FetchStopData = async () => {
     this.setState({ isLoading: true });
-    let apiObjectInfo = this.initializeApiObject();
-
+    let apiObjectInfo = api.API.getAPI();
+    //Axios GET Request
     const result = await axios({
       method: "GET",
       baseURL: apiObjectInfo.baseAPIUrl,
       url: `?appID=${apiObjectInfo.apiID}&apiKey=${apiObjectInfo.apiKey}&stopNo=${this.state.stop}&format=json`,
       timeout: 3000,
     });
+
     await this.setState({ items: result.data });
     await this.FetchNextArrivalData(this.state.stop, this.state.route);
-    console.log(this.state.items);
-    console.log(this.state.nextArrivalInfo);
 
-    let flagMessage = this.checkResponseErrors(this.state.items);
+    let flagMessage = api.API.checkForAPIResponseErrors(this.state.items);
     if (flagMessage === "") {
       console.log("Should render route list:", flagMessage);
       this.setState({ isLoading: false });
@@ -128,30 +107,13 @@ class RoutesList extends React.Component<RouteList, MyState> {
   };
 
   /**
-   * Checks for API response errors
-   * Reference: https://www.octranspo.com/en/plan-your-trip/travel-tools/developers/dev-doc
-   * @param items
-   * @returns
-   */
-  checkResponseErrors(items: RouteList) {
-    let message: string = "";
-    if (items.GetRouteSummaryForStopResult.Error === "10") {
-      return (message = "Invalid Stop Number");
-    } else if (items.GetRouteSummaryForStopResult.Error === "2") {
-      return (message = "Undable to query data source");
-    } else {
-      return message;
-    }
-  }
-
-  /**
    * Fetchs next arrival data
    * @param stop
    * @param route
    */
   async FetchNextArrivalData(stop: any, route: any) {
-    console.log("Stop", stop, "and", route, "route");
-    let apiObjectInfo = this.initializeApiObject();
+    let apiObjectInfo = api.API.getAPI();
+    //Axios GET Request
     const result = await axios({
       method: "get",
       baseURL: apiObjectInfo.baseNextBusURL,
@@ -164,7 +126,6 @@ class RoutesList extends React.Component<RouteList, MyState> {
     e.preventDefault();
     await this.setState({ stop: this.state.search });
     this.FetchStopData();
-    if (await this.handleValidation()) console.log("Not valid");
   }
 
   handleChangeEvent(e: any) {
@@ -176,15 +137,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
     if (e.key === "Enter") {
       await this.setState({ stop: this.state.search });
       this.FetchStopData();
-      if (await this.handleValidation()) console.log("Not valid");
     }
-  }
-
-  async handleRouteClickEvent(e: any) {
-    e.preventDefault();
-    await this.FetchNextArrivalData(this.state.stop, this.state.route);
-    console.log(this.state.nextArrivalInfo);
-    console.log("Click");
   }
 
   /**
@@ -238,6 +191,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
    */
   rendeListOfRoutes(routes: Routes, RouteDirection: RouteDirection) {
     const routeObject: any = routes.Route;
+    
     if (routes.Route != null && routes.Route instanceof Array) {
       return (
         <ul className="font-medium text-gray-500 text-center divide-y-2">
@@ -245,7 +199,6 @@ class RoutesList extends React.Component<RouteList, MyState> {
             <li
               key={"#" + item.RouteNo + " - " + item.RouteHeading}
               className="hover:text-gray-900 p-5 hover:bg-green-100 cursor-pointer flex flex-col"
-              onClick={this.handleRouteClickEvent}
             >
               Route - {item.RouteNo + " " + item.RouteHeading}
               <span className="text-green-700 mr-2">Next Arrival in:</span>
@@ -257,13 +210,11 @@ class RoutesList extends React.Component<RouteList, MyState> {
                       {trip.AdjustedScheduleTime}min,{" "}
                     </span>
                   ))
-                : "no data"}
-              {RouteDirection instanceof Array &&
-              RouteDirection !== undefined &&
-              Array.isArray(RouteDirection)
+                : ""}
+              {RouteDirection instanceof Array && RouteDirection !== undefined
                 ? RouteDirection.map((route) => {
                     return item.RouteNo === route.RouteNo
-                      ? this.renderNextTripsForArrayOfRoutes(route)
+                      ? this.renderNextTripsForArrayOfRoutes(route.Trips)
                       : "";
                   })
                 : ""}
@@ -273,31 +224,40 @@ class RoutesList extends React.Component<RouteList, MyState> {
       );
     }
 
-    if (!Array.isArray(routes.Route)) {
+    if (!Array.isArray(routes.Route) && routes.Route !== null) {
       return (
         <ul className="font-medium text-gray-500 text-center divide-y-2">
-          <li
-            className="hover:text-gray-900 p-5 hover:bg-green-100 cursor-pointer"
-            onClick={this.handleRouteClickEvent}
-          >
+          <li className="hover:text-gray-900 p-5 hover:bg-green-100 cursor-pointer">
             Route - {routeObject.RouteNo + " " + routeObject.RouteHeading}
           </li>
         </ul>
       );
     }
+    return(
+      <NoBusInfo/>
+    )
   }
 
-  renderNextTripsForArrayOfRoutes(trips: RouteDirection) {
-    console.log(trips);
-    return trips.Trips.Trip.map((trip: any) => (
-      <span>{trip.AdjustedScheduleTime}min</span>
-    ));
-  }
-
-  renderNextTripsForRouteObject(trips: RouteDirection) {
-    return trips.Trips.Trip.map((trip: any) => (
-      <span>{trip.AdjustedScheduleTime}min</span>
-    ));
+  renderNextTripsForArrayOfRoutes(trips: Trips) {
+    let singleTrip: any = trips.Trip;
+    if (!Array.isArray(trips.Trip)) {
+      return <span>{singleTrip.AdjustedScheduleTime}min</span>;
+    }
+    if (Array.isArray(trips.Trip)) {
+      // let sortedArrivigTime = trips.Trip.sort((a: any, b: any) => a - b);
+      // console.log("SortedList:", sortedArrivigTime);
+      return trips.Trip.map((trip: any, index: number) => (
+        //  console.log(trip.AdjustedScheduleTime),
+        // trip.AdjustedScheduleTime > trip.AdjustedScheduleTime[index - 1] ? (
+        //   <span className="text-gray-500">{trip.AdjustedScheduleTime}min,</span>
+        // ) : (
+        //   <span className="text-green-500">
+        //     {trip.AdjustedScheduleTime}min,
+        //   </span>
+        // )
+        <span>{trip.AdjustedScheduleTime}min,</span>
+      ));
+    }
   }
 
   /**
@@ -332,23 +292,21 @@ class RoutesList extends React.Component<RouteList, MyState> {
   render() {
     if (this.state.isLoading) return <Loading />;
     return (
-      <div className="container mx-auto border w-1/2 border-green-700 p-2 rounded-lg shadow-md mt-7">
-        <div className="flex justify-center flex-col">
-          <h1 className="font-bold text-gray-500 p-2">Enter stop Number</h1>
-          <SearchInput
-            keyword={this.state.search}
-            setKeyword={this.handleChangeEvent}
-            setStop={this.handleClickEvent}
-            handleEnterKey={this.handleKeyPressEvent}
-          />
-          {this.displayRoutesforStop(
-            this.state.items,
-            this.state.nextArrivalInfo,
-            this.state.loadRoutes,
-            this.state.errorMessage
-          )}
-        </div>
-      </div>
+      <SearchContainer
+        displayRoutesforStop={this.displayRoutesforStop(
+          this.state.items,
+          this.state.nextArrivalInfo,
+          this.state.loadRoutes,
+          this.state.errorMessage
+        )}
+      >
+        <SearchInput
+          keyword={this.state.search}
+          setKeyword={this.handleChangeEvent}
+          setStop={this.handleClickEvent}
+          handleEnterKey={this.handleKeyPressEvent}
+        />
+      </SearchContainer>
     );
   }
 }
