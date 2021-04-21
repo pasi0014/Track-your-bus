@@ -1,9 +1,11 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
-import { Route, RouteList, Routes } from "../interfaces/RouteList";
+import { RouteList, Routes } from "../interfaces/RouteList";
 import axios from "axios";
 import { NextBusInfo, RouteDirection, Trips } from "../interfaces/NextBusInfo";
-import Search from "./Search";
+import SearchInput from "./BusSearch/SearchInput";
+import { EmptyMessage } from "./Messages/EmptyMessage";
+import { InvalidInputMessage } from "./Messages/InvalidInputMessage";
+import { Loading } from "./Alerts/Loading";
 
 // eslint-disable-next-line no-lone-blocks
 {
@@ -72,11 +74,6 @@ class RoutesList extends React.Component<RouteList, MyState> {
     this.setState({ isLoading: false });
   }
 
-  componentDidUpdate() {
-    // console.log("Hello I Did Update")
-    console.log(this.state.stop);
-  }
-
   /**
    * Initializes api object
    * @returns
@@ -109,6 +106,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
       method: "GET",
       baseURL: apiObjectInfo.baseAPIUrl,
       url: `?appID=${apiObjectInfo.apiID}&apiKey=${apiObjectInfo.apiKey}&stopNo=${this.state.stop}&format=json`,
+      timeout: 3000,
     });
     await this.setState({ items: result.data });
     await this.FetchNextArrivalData(this.state.stop, this.state.route);
@@ -216,8 +214,8 @@ class RoutesList extends React.Component<RouteList, MyState> {
     loadRoutes: boolean,
     errorMessage: boolean
   ) {
-    if (errorMessage) return this.displayInvalidInputMessage();
-    if (!loadRoutes) return this.displayMessage();
+    if (errorMessage) return <InvalidInputMessage />;
+    if (!loadRoutes) return <EmptyMessage />;
     let nextTripsArray =
       nextTrip.GetNextTripsForStopResult.Route.RouteDirection;
     return (
@@ -240,7 +238,6 @@ class RoutesList extends React.Component<RouteList, MyState> {
    */
   rendeListOfRoutes(routes: Routes, RouteDirection: RouteDirection) {
     const routeObject: any = routes.Route;
-
     if (routes.Route != null && routes.Route instanceof Array) {
       return (
         <ul className="font-medium text-gray-500 text-center divide-y-2">
@@ -252,20 +249,23 @@ class RoutesList extends React.Component<RouteList, MyState> {
             >
               Route - {item.RouteNo + " " + item.RouteHeading}
               <span className="text-green-700 mr-2">Next Arrival in:</span>
-              
               {!Array.isArray(RouteDirection) &&
               RouteDirection.Trips !== undefined &&
               item.RouteNo === RouteDirection.RouteNo
-                ? RouteDirection.Trips.Trip.map((item) => (
-                    <>{item.AdjustedScheduleTime}min, &nbsp;</>
+                ? RouteDirection.Trips.Trip.map((trip) => (
+                    <span key={Math.random()}>
+                      {trip.AdjustedScheduleTime}min,{" "}
+                    </span>
                   ))
-                : "No data :("}
-
-              {RouteDirection instanceof Array && RouteDirection !== undefined 
-                ? console.log(
-                    "Hello I'm array of trips arrays",
-                    RouteDirection.map((item) => item.Trips)
-                  )
+                : "no data"}
+              {RouteDirection instanceof Array &&
+              RouteDirection !== undefined &&
+              Array.isArray(RouteDirection)
+                ? RouteDirection.map((route) => {
+                    return item.RouteNo === route.RouteNo
+                      ? this.renderNextTripsForArrayOfRoutes(route)
+                      : "";
+                  })
                 : ""}
             </li>
           ))}
@@ -287,8 +287,20 @@ class RoutesList extends React.Component<RouteList, MyState> {
     }
   }
 
+  renderNextTripsForArrayOfRoutes(trips: RouteDirection) {
+    console.log(trips);
+    return trips.Trips.Trip.map((trip: any) => (
+      <span>{trip.AdjustedScheduleTime}min</span>
+    ));
+  }
+
+  renderNextTripsForRouteObject(trips: RouteDirection) {
+    return trips.Trips.Trip.map((trip: any) => (
+      <span>{trip.AdjustedScheduleTime}min</span>
+    ));
+  }
+
   /**
-   * ::Temp Funciton::
    * Renders next bus arrival info
    * @param nextTrip
    * @returns
@@ -297,8 +309,10 @@ class RoutesList extends React.Component<RouteList, MyState> {
     let renderArray: boolean = false;
     let renderObject: boolean = false;
     const trip: any = nextTrip.Trip;
-    if (nextTrip.Trip instanceof Array) renderArray = true;
-    if (!Array.isArray(nextTrip.Trip)) renderObject = true;
+    if (nextTrip.Trip instanceof Array && nextTrip !== undefined)
+      renderArray = true;
+    if (!Array.isArray(nextTrip.Trip) && nextTrip !== undefined)
+      renderObject = true;
 
     if (renderArray) {
       return (
@@ -315,65 +329,27 @@ class RoutesList extends React.Component<RouteList, MyState> {
     }
   }
 
-  displayInvalidInputMessage() {
-    return (
-      <div className="mt-2 bg-red-200 text-center font-medium text-red-700 p-3 rounded-lg shadow">
-        <h1>Error, invalid stop number</h1>
-      </div>
-    );
-  }
-
-  displayMessage() {
-    return (
-      <div className="mt-2 bg-gray-200 text-center font-medium text-gray-700 p-3 rounded-lg shadow">
-        <h1>Nothing to Display Yet.</h1>
-      </div>
-    );
-  }
-
   render() {
-    if (this.state.isLoading) {
-      return (
-        <div className="w-1/2 bg-green-200 p-10 container text-center mx-auto rounded-lg shadow-lg text-lg font-bold text-green-700">
-          <h2>Loading</h2>
+    if (this.state.isLoading) return <Loading />;
+    return (
+      <div className="container mx-auto border w-1/2 border-green-700 p-2 rounded-lg shadow-md mt-7">
+        <div className="flex justify-center flex-col">
+          <h1 className="font-bold text-gray-500 p-2">Enter stop Number</h1>
+          <SearchInput
+            keyword={this.state.search}
+            setKeyword={this.handleChangeEvent}
+            setStop={this.handleClickEvent}
+            handleEnterKey={this.handleKeyPressEvent}
+          />
+          {this.displayRoutesforStop(
+            this.state.items,
+            this.state.nextArrivalInfo,
+            this.state.loadRoutes,
+            this.state.errorMessage
+          )}
         </div>
-      );
-    } else {
-      return (
-        <div className="container mx-auto border w-1/2 border-green-700 p-2 rounded-lg shadow-md mt-7">
-          <div className="flex justify-center flex-col">
-            <h1 className="font-bold text-gray-500 p-2">Enter stop Number</h1>
-            <div className="relative mt-1">
-              <input
-                type="text"
-                className="w-full pl-3 pr-10 py-2 border-2 border-gray-200
-          rounded-xl hover:border-gray-300 focus:outline-none
-          focus:border-blue-500 transition-colors"
-                value={this.state.search}
-                onChange={this.handleChangeEvent}
-                onKeyPress={this.handleKeyPressEvent}
-                placeholder="Search..."
-              />
-              <button
-                onClick={this.handleClickEvent}
-                className="block w-7 h-7 text-center text-xl leading-0 absolute
-        top-2 right-2 text-gray-400 focus:outline-none
-        hover:text-gray-900 transition-colors"
-              >
-                <FontAwesomeIcon icon={["fas", "search"]} />
-              </button>
-            </div>
-
-            {this.displayRoutesforStop(
-              this.state.items,
-              this.state.nextArrivalInfo,
-              this.state.loadRoutes,
-              this.state.errorMessage
-            )}
-          </div>
-        </div>
-      );
-    }
+      </div>
+    );
   }
 }
 

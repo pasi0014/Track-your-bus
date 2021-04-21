@@ -14,7 +14,7 @@ export interface Route {
 }
 
 export interface RouteDirection {
-    map(): any;
+    map():                 any;
     RouteNo:               string;
     RouteLabel:            string;
     Direction:             string;
