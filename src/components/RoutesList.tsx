@@ -1,5 +1,5 @@
 import React from "react";
-import { RouteList, Routes } from "../interfaces/RouteList";
+import { Route, RouteList, Routes } from "../interfaces/RouteList";
 import axios from "axios";
 import { NextBusInfo, RouteDirection, Trips } from "../interfaces/NextBusInfo";
 import SearchInput from "./BusSearch/SearchInput";
@@ -7,7 +7,8 @@ import { EmptyMessage } from "./Messages/EmptyMessage";
 import { InvalidInputMessage } from "./Messages/InvalidInputMessage";
 import { Loading } from "./Alerts/Loading";
 import { SearchContainer } from "./BusSearch/SearchContainer";
-import * as api from "../API/API";
+import { API } from "../API/API";
+import { HelperModule } from "../Modules/HelperModule";
 import { NoBusInfo } from "./Alerts/NoBusInfo";
 
 // eslint-disable-next-line no-lone-blocks
@@ -71,7 +72,6 @@ class RoutesList extends React.Component<RouteList, MyState> {
   }
 
   componentDidMount() {
-    // console.log(api.API.getAPI());
     this.setState({ isLoading: false });
   }
 
@@ -80,7 +80,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
    */
   FetchStopData = async () => {
     this.setState({ isLoading: true });
-    let apiObjectInfo = api.API.getAPI();
+    let apiObjectInfo = API.getAPI();
     //Axios GET Request
     const result = await axios({
       method: "GET",
@@ -90,9 +90,9 @@ class RoutesList extends React.Component<RouteList, MyState> {
     });
 
     await this.setState({ items: result.data });
-    await this.FetchNextArrivalData(this.state.stop, this.state.route);
+    await this.FetchNextArrivalData(this.state.stop);
 
-    let flagMessage = api.API.checkForAPIResponseErrors(this.state.items);
+    let flagMessage = API.checkForAPIResponseErrors(this.state.items);
     if (flagMessage === "") {
       console.log("Should render route list:", flagMessage);
       this.setState({ isLoading: false });
@@ -111,13 +111,13 @@ class RoutesList extends React.Component<RouteList, MyState> {
    * @param stop
    * @param route
    */
-  async FetchNextArrivalData(stop: any, route: any) {
-    let apiObjectInfo = api.API.getAPI();
+  async FetchNextArrivalData(stop: any) {
+    let apiObjectInfo = API.getAPI();
     //Axios GET Request
     const result = await axios({
       method: "get",
       baseURL: apiObjectInfo.baseNextBusURL,
-      url: `?appID=${apiObjectInfo.apiID}&apiKey=${apiObjectInfo.apiKey}&stopNo=${this.state.stop}&routeNo=${this.state.route}&format=json`,
+      url: `?appID=${apiObjectInfo.apiID}&apiKey=${apiObjectInfo.apiKey}&stopNo=${stop}&format=json`,
     });
     await this.setState({ nextArrivalInfo: result.data });
   }
@@ -191,7 +191,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
    */
   rendeListOfRoutes(routes: Routes, RouteDirection: RouteDirection) {
     const routeObject: any = routes.Route;
-    
+
     if (routes.Route != null && routes.Route instanceof Array) {
       return (
         <ul className="font-medium text-gray-500 text-center divide-y-2">
@@ -202,22 +202,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
             >
               Route - {item.RouteNo + " " + item.RouteHeading}
               <span className="text-green-700 mr-2">Next Arrival in:</span>
-              {!Array.isArray(RouteDirection) &&
-              RouteDirection.Trips !== undefined &&
-              item.RouteNo === RouteDirection.RouteNo
-                ? RouteDirection.Trips.Trip.map((trip) => (
-                    <span key={Math.random()}>
-                      {trip.AdjustedScheduleTime}min,{" "}
-                    </span>
-                  ))
-                : ""}
-              {RouteDirection instanceof Array && RouteDirection !== undefined
-                ? RouteDirection.map((route) => {
-                    return item.RouteNo === route.RouteNo
-                      ? this.renderNextTripsForArrayOfRoutes(route.Trips)
-                      : "";
-                  })
-                : ""}
+              {this.renderNextBusArrivalInfo(RouteDirection, item)}
             </li>
           ))}
         </ul>
@@ -225,6 +210,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
     }
 
     if (!Array.isArray(routes.Route) && routes.Route !== null) {
+      console.log("Render");
       return (
         <ul className="font-medium text-gray-500 text-center divide-y-2">
           <li className="hover:text-gray-900 p-5 hover:bg-green-100 cursor-pointer">
@@ -233,31 +219,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
         </ul>
       );
     }
-    return(
-      <NoBusInfo/>
-    )
-  }
-
-  renderNextTripsForArrayOfRoutes(trips: Trips) {
-    let singleTrip: any = trips.Trip;
-    if (!Array.isArray(trips.Trip)) {
-      return <span>{singleTrip.AdjustedScheduleTime}min</span>;
-    }
-    if (Array.isArray(trips.Trip)) {
-      // let sortedArrivigTime = trips.Trip.sort((a: any, b: any) => a - b);
-      // console.log("SortedList:", sortedArrivigTime);
-      return trips.Trip.map((trip: any, index: number) => (
-        //  console.log(trip.AdjustedScheduleTime),
-        // trip.AdjustedScheduleTime > trip.AdjustedScheduleTime[index - 1] ? (
-        //   <span className="text-gray-500">{trip.AdjustedScheduleTime}min,</span>
-        // ) : (
-        //   <span className="text-green-500">
-        //     {trip.AdjustedScheduleTime}min,
-        //   </span>
-        // )
-        <span>{trip.AdjustedScheduleTime}min,</span>
-      ));
-    }
+    return <NoBusInfo />;
   }
 
   /**
@@ -265,27 +227,39 @@ class RoutesList extends React.Component<RouteList, MyState> {
    * @param nextTrip
    * @returns
    */
-  renderNextBusArrivalInfo(nextTrip: Trips) {
-    let renderArray: boolean = false;
-    let renderObject: boolean = false;
-    const trip: any = nextTrip.Trip;
-    if (nextTrip.Trip instanceof Array && nextTrip !== undefined)
-      renderArray = true;
-    if (!Array.isArray(nextTrip.Trip) && nextTrip !== undefined)
-      renderObject = true;
-
-    if (renderArray) {
-      return (
-        <span>
-          {nextTrip.Trip.map((trip) => (
-            <>{trip.AdjustedScheduleTime}</>
-          ))}
+  renderNextBusArrivalInfo(RouteDirection: RouteDirection, item: Route) {
+    if (
+      !Array.isArray(RouteDirection) &&
+      RouteDirection.Trips !== undefined &&
+      (item.RouteNo + item.RouteHeading === RouteDirection.RouteNo + RouteDirection.RouteLabel)
+    ) {
+      return RouteDirection.Trips.Trip.map((trip) => (
+        <span key={Math.random()}>
+          {HelperModule.timeConvert(trip.AdjustedScheduleTime)}
         </span>
+      ));
+    }
+    if (RouteDirection instanceof Array && RouteDirection !== undefined) {
+      // console.log("item", item, " and route", RouteDirection);
+      return RouteDirection.map((route: any) =>
+        (item.RouteNo + item.RouteHeading === route.RouteNo + route.RouteLabel)
+          ? this.renderNextTripsForArrayOfRoutes(route.Trips)
+          : ""
       );
     }
+  }
 
-    if (renderObject) {
-      return <span>{trip.AdjustedScheduleTime}</span>;
+  renderNextTripsForArrayOfRoutes(trips: Trips) {
+    let singleTrip: any = trips.Trip;
+    if (!Array.isArray(trips.Trip)) {
+      return (
+        <span>{HelperModule.timeConvert(singleTrip.AdjustedScheduleTime)}</span>
+      );
+    }
+    if (Array.isArray(trips.Trip)) {
+      return trips.Trip.map((trip: any, index: number) => (
+        <span>{HelperModule.timeConvert(trip.AdjustedScheduleTime)}</span>
+      ));
     }
   }
 
