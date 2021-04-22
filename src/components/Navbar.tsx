@@ -31,7 +31,7 @@ export default function Navbar() {
           </div>
           <div
             className={
-              "lg:flex flex-grow items-center bg-yellow-600 lg:bg-transparent lg:shadow-none" +
+              "lg:flex flex-grow items-center bg-yellow-600 p-5 lg:bg-transparent lg:shadow-none space-y-3" +
               (navbarOpen ? " block rounded shadow-lg" : " hidden")
             }
           >
@@ -40,49 +40,25 @@ export default function Navbar() {
                 <li className="flex items-center">
                   <button
                     type="button"
-                    className="bg-yellow-500 hover:bg-yellow-50 hover:text-gray-500 py-2 px-3 rounded font-medium"
+                    // className="bg-yellow-500 hover:bg-yellow-50 hover:text-gray-500 py-2 px-3 rounded font-medium"
+                    className={
+                      "text-xs font-bold uppercase px-7 py-3 bg-yellow-500 rounded shadow-lg hover:shadow-md outline-none focus:outline-none lg:mr-1 lg:mb-0 ml-2 mb-3" +
+                      (navbarOpen ? "bg-yellow-900 hover:bg-yellow-100 hover:text-gray-500" : "bg-yellow-900 hover:bg-yellow-100 hover:text-gray-500")
+                    }
                     style={{ transition: "all .15s ease" }}
                   >
-                    Stop Info
+                    Find Bus Stop
                   </button>
                 </li>
               </Link>
             </ul>
-            <ul className="flex flex-col lg:flex-row list-none lg:ml-auto">
-              <li className="flex items-center">
-                <a
-                  className=" px-3 py-4 lg:py-2 flex items-center text-xs uppercase font-bold"
-                  href="#pablo"
-                >
-                  <i className=" fab fa-facebook text-lg leading-lg " />
-                  <FontAwesomeIcon icon={["fab", "facebook"]} size="lg" />
-                  <span className="lg:hidden inline-block ml-2">Share</span>
-                </a>
-              </li>
-
-              <li className="flex items-center">
-                <a
-                  className=" px-3 py-4 lg:py-2 flex items-center text-xs uppercase font-bold"
-                  href="#pablo"
-                >
-                  <i className=" fab fa-twitter text-lg leading-lg " />
-                  <span className="lg:hidden inline-block ml-2">Tweet</span>
-                </a>
-              </li>
-
-              <li className="flex items-center">
-                <a
-                  className=" px-3 py-4 lg:py-2 flex items-center text-xs uppercase font-bold"
-                  href="#pablo"
-                >
-                  <i className="fab fa-github text-lg leading-lg " />
-                  <span className="lg:hidden inline-block ml-2">Star</span>
-                </a>
-              </li>
-
+            <ul className="flex flex-col lg:flex-row ">
               <li className="flex items-center">
                 <button
-                  className="bg-yellow-600 hover:bg-yellow-100 hover:text-gray-500 text-xs font-bold uppercase px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none lg:mr-1 lg:mb-0 ml-3 mb-3"
+                  className={
+                    "text-xs font-bold uppercase bg-yellow-600 hover:bg-yellow-100 hover:text-gray-500 px-4 py-3 rounded shadow hover:shadow-md outline-none focus:outline-none lg:mr-1 lg:mb-0 ml-2 mb-3" +
+                    (navbarOpen ? "bg-yellow-500 hover:bg-yellow-50 hover:text-gray-500 px-6 py-2" : "bg-green-500 hover:bg-yellow-100 hover:text-gray-500")
+                  }
                   type="button"
                   style={{ transition: "all .15s ease" }}
                 >
