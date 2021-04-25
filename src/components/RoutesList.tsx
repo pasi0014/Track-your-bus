@@ -20,14 +20,6 @@ import { NoBusInfo } from "./Alerts/NoBusInfo";
 */
 }
 
-/**
- * TODO:
- * 1. Finish FetchNextArrivalData Function - done
- * 2. Implement Next Bus Arrival schedule for selected bus - done
- * 3. Improve UI
- * 4. Refactor code and separate all of the logic into separate file
- */
-
 interface MyState {
   items: any;
   stop: string;
@@ -173,9 +165,9 @@ class RoutesList extends React.Component<RouteList, MyState> {
       nextTrip.GetNextTripsForStopResult.Route.RouteDirection;
     return (
       <>
-        <h2 className="font-bold text-center p-3 uppercase">
+        <h4 className="font-bold text-center p-3 uppercase">
           Stop Name: {items.GetRouteSummaryForStopResult.StopDescription}
-        </h2>
+        </h4>
         {this.rendeListOfRoutes(
           items.GetRouteSummaryForStopResult.Routes,
           nextTripsArray

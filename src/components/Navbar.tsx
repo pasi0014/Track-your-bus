@@ -52,26 +52,6 @@ export default function Navbar() {
                 </li>
               </Link>
             </ul>
-            <ul className="flex flex-col lg:flex-row ">
-              <li className="flex items-center">
-                <button
-                  className={
-                    "text-xs font-bold uppercase bg-yellow-600 hover:bg-yellow-100 hover:text-gray-500 px-4 py-3 rounded shadow hover:shadow-md outline-none focus:outline-none lg:mr-1 lg:mb-0 ml-2 mb-3" +
-                    (navbarOpen ? "bg-yellow-500 hover:bg-yellow-50 hover:text-gray-500 px-6 py-2" : "bg-green-500 hover:bg-yellow-100 hover:text-gray-500")
-                  }
-                  type="button"
-                  style={{ transition: "all .15s ease" }}
-                >
-                  <span className="mr-2">
-                    <FontAwesomeIcon
-                      icon={["fas", "arrow-alt-circle-down"]}
-                      size="lg"
-                    />
-                  </span>
-                  Download
-                </button>
-              </li>
-            </ul>
           </div>
         </div>
       </nav>
