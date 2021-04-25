@@ -42,12 +42,12 @@ export default function Footer() {
                   <ul className="list-unstyled">
                     <li>
                       <a className="text-gray-100 hover:text-gray-400 font-semibold block pb-2 text-sm"
-                         href="https://www.creative-tim.com/presentation">About 
+                         href="/about">About 
                       </a>
                     </li>
                     <li>
                       <a className="text-gray-100 hover:text-gray-400 font-semibold block pb-2 text-sm"
-                         href="https://www.github.com/creativetimofficial">Github
+                         href="https://github.com/pasi0014/Track-your-bus">Github
                       </a>
                     </li>
                   </ul>

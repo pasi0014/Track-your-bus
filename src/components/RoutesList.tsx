@@ -165,7 +165,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
       nextTrip.GetNextTripsForStopResult.Route.RouteDirection;
     return (
       <>
-        <h4 className="font-bold text-center p-3 uppercase">
+        <h4 className="text-center p-3 uppercase">
           Stop Name: {items.GetRouteSummaryForStopResult.StopDescription}
         </h4>
         {this.rendeListOfRoutes(
