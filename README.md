@@ -16,6 +16,6 @@ For this Web App I'm using [OC Transpo's API](https://www.octranspo.com/en/plan-
 ## TODO
  - [x] Finish next arrival live tracking feature (allows user to see next arrival of a bus for a selected stop)
  - [x] Refactor code and separate logic from front-end, create extra components if required 
- - [ ] Improve layout of navbar and footer components
+ - [x] Improve layout of navbar and footer components
 
 
