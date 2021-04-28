@@ -5,6 +5,7 @@ import LandingPage from "./pages/LandingPage";
 
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import RoutesList from "./components/RoutesList";
+import { About } from "./pages/About";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Switch>
           <Route path="/" exact component={LandingPage} />
           <Route path="/stopInfo" component={RoutesList} />
+          <Route path="/about" component={About}/>
         </Switch>
 
         <div className="mt-10">

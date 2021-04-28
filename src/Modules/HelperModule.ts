@@ -10,6 +10,7 @@ export class HelperModule {
     if (rhours !== 0) {
       return hasHours;
     }
+    if (rminutes === 0 && rhours !== 0) return rhours + "hour";
     if (rminutes === 1) return rminutes + " minute";
     return noHours;
   }

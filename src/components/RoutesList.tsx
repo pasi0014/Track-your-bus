@@ -11,22 +11,6 @@ import { API } from "../API/API";
 import { HelperModule } from "../Modules/HelperModule";
 import { NoBusInfo } from "./Alerts/NoBusInfo";
 
-// eslint-disable-next-line no-lone-blocks
-{
-  /* 
-  Dear future me, please forgive me for wriring this piece of messy code.
-  I'm just trying to learn React with TypeScript.
-  Hope, you are doing great these days :)
-*/
-}
-
-/**
- * TODO:
- * 1. Finish FetchNextArrivalData Function - done
- * 2. Implement Next Bus Arrival schedule for selected bus - done
- * 3. Improve UI
- * 4. Refactor code and separate all of the logic into separate file
- */
 
 interface MyState {
   items: any;
@@ -173,9 +157,9 @@ class RoutesList extends React.Component<RouteList, MyState> {
       nextTrip.GetNextTripsForStopResult.Route.RouteDirection;
     return (
       <>
-        <h2 className="font-bold text-center p-3 uppercase">
+        <h4 className="text-center p-3 uppercase">
           Stop Name: {items.GetRouteSummaryForStopResult.StopDescription}
-        </h2>
+        </h4>
         {this.rendeListOfRoutes(
           items.GetRouteSummaryForStopResult.Routes,
           nextTripsArray
@@ -201,7 +185,7 @@ class RoutesList extends React.Component<RouteList, MyState> {
               className="hover:text-gray-900 p-5 hover:bg-green-100 cursor-pointer flex flex-col"
             >
               Route - {item.RouteNo + " " + item.RouteHeading}
-              <span className="text-green-700 mr-2">Next Arrival in:</span>
+              {/* <span className="text-green-700 mr-2">Next Arrival in:</span> */}
               {this.renderNextBusArrivalInfo(RouteDirection, item)}
             </li>
           ))}
@@ -231,34 +215,61 @@ class RoutesList extends React.Component<RouteList, MyState> {
     if (
       !Array.isArray(RouteDirection) &&
       RouteDirection.Trips !== undefined &&
-      (item.RouteNo + item.RouteHeading === RouteDirection.RouteNo + RouteDirection.RouteLabel)
+      item.RouteNo + item.RouteHeading ===
+        RouteDirection.RouteNo + RouteDirection.RouteLabel
     ) {
-      return RouteDirection.Trips.Trip.map((trip) => (
-        <span key={Math.random()}>
-          {HelperModule.timeConvert(trip.AdjustedScheduleTime)}
-        </span>
-      ));
+      return (
+        <>
+          <span className="text-green-700 mr-2">Next Arrival in:</span>
+          {RouteDirection.Trips.Trip.map((trip) => (
+            <span key={Math.random()}>
+              {HelperModule.timeConvert(trip.AdjustedScheduleTime)}
+            </span>
+          ))}
+        </>
+      );
     }
+
+    if (
+      item.RouteNo !== RouteDirection.RouteNo &&
+      !Array.isArray(RouteDirection)
+    )
+      return <span className="text-red-400">No data :(</span>
+
     if (RouteDirection instanceof Array && RouteDirection !== undefined) {
-      // console.log("item", item, " and route", RouteDirection);
-      return RouteDirection.map((route: any) =>
-        (item.RouteNo + item.RouteHeading === route.RouteNo + route.RouteLabel)
-          ? this.renderNextTripsForArrayOfRoutes(route.Trips)
-          : ""
+      console.log(RouteDirection);
+      return (
+        <>
+          {RouteDirection.map((route: any) =>
+            item.RouteNo + item.RouteHeading ===
+            route.RouteNo + route.RouteLabel ? (
+              <>
+                <span className="text-green-700 mr-2">Next Arrival in:</span>
+                {this.renderNextTripsForArrayOfRoutes(route.Trips)}
+              </>
+            ) : null
+          )}
+        </>
       );
     }
   }
 
   renderNextTripsForArrayOfRoutes(trips: Trips) {
     let singleTrip: any = trips.Trip;
+    let idx: number = 0;
+    console.log("Trips::", trips);
     if (!Array.isArray(trips.Trip)) {
       return (
-        <span>{HelperModule.timeConvert(singleTrip.AdjustedScheduleTime)}</span>
+        <span key={idx + 1}>
+          {HelperModule.timeConvert(singleTrip.AdjustedScheduleTime)}
+        </span>
       );
     }
     if (Array.isArray(trips.Trip)) {
       return trips.Trip.map((trip: any, index: number) => (
-        <span>{HelperModule.timeConvert(trip.AdjustedScheduleTime)}</span>
+        <span key={index}>
+          {HelperModule.timeConvert(trip.AdjustedScheduleTime)}
+        </span>
       ));
     }
   }
