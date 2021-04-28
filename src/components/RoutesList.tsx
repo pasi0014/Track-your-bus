@@ -11,14 +11,6 @@ import { API } from "../API/API";
 import { HelperModule } from "../Modules/HelperModule";
 import { NoBusInfo } from "./Alerts/NoBusInfo";
 
-// eslint-disable-next-line no-lone-blocks
-{
-  /* 
-  Dear future me, please forgive me for wriring this piece of messy code.
-  I'm just trying to learn React with TypeScript.
-  Hope, you are doing great these days :)
-*/
-}
 
 interface MyState {
   items: any;
